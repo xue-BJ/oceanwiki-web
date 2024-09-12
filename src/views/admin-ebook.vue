@@ -33,6 +33,11 @@
 
                         <template v-if="column.dataIndex === 'action'">
                             <a-space size="small">
+
+                                <a-button type="primary">
+                                    <router-link to="'/admin/doc?ebookId='+record.id">文档管理</router-link>
+                                </a-button>
+
                                 <a-button type="primary" @click="showModal('edit', record)">
                                     编辑
                                 </a-button>
@@ -226,6 +231,8 @@ const handleModalok = () => {
         }
     })
 }
+
+
 
 const handleDelete = (id: number) => {
     axios.delete("/ebook/remove/" + id).then((resp) => {
