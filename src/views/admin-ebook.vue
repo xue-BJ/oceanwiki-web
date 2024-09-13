@@ -28,14 +28,15 @@
                         </template>
 
                         <template v-if="column.key === 'category'">
-                            <span>{{ getCategoryName(record.category1Id) }}/{{ getCategoryName(record.category2Id) }}</span>
+                            <span>{{ getCategoryName(record.category1Id) }}/{{ getCategoryName(record.category2Id)
+                                }}</span>
                         </template>
 
                         <template v-if="column.dataIndex === 'action'">
                             <a-space size="small">
 
                                 <a-button type="primary">
-                                    <router-link to="'/admin/doc?ebookId='+record.id">文档管理</router-link>
+                                    <router-link :to="'/admin/doc?ebookId='+record.id">文档管理</router-link>
                                 </a-button>
 
                                 <a-button type="primary" @click="showModal('edit', record)">
@@ -82,6 +83,7 @@ import { onMounted, ref } from 'vue';
 import axios from 'axios';
 import { Tool } from '@/utils/tool'
 import { message } from 'ant-design-vue';
+import { useRoute } from 'vue-router';
 
 const ebooks = ref();//定义查询书籍返回集合
 
@@ -183,8 +185,6 @@ const handleQueryCategory = () => {
                 page: 1,
                 size: pagination.value.pageSize
             });
-
-
             console.log('-----------', categoryIds);
         } else {
             message.error(data.message)
@@ -232,7 +232,8 @@ const handleModalok = () => {
     })
 }
 
-
+//声明路由
+const route = useRoute();
 
 const handleDelete = (id: number) => {
     axios.delete("/ebook/remove/" + id).then((resp) => {
@@ -258,8 +259,8 @@ const getCategoryName = (cid: string) => {
     //     }
     // })
 
-    categorys.forEach((item:string) => {
-        if(item.id === cidstr){
+    categorys.forEach((item: string) => {
+        if (item.id === cidstr) {
             result = item.name;
         }
     });

@@ -2,82 +2,105 @@
     <div>
         <a-layout>
             <a-layout-content :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '280px' }">
-                <p>
-                    <a-form layout="inline" :model="param">
-
-
-                        <a-form-item>
-                            <a-button type="primary" @click="showModal('add', [])">
-                                新增
-                            </a-button>
-                        </a-form-item>
-                    </a-form>
-                </p>
-                <a-table :columns="columns" :row-key="record => record.id" :data-source="level1" :pagination="false"
-                    :loading="loading">
-                    <template #bodyCell="{ column, record }">
-                        <template v-if="column.dataIndex === 'action'">
-                            <a-space size="small">
-
-                                <a-button type="primary" @click="showModal('edit', record)">
-                                    编辑
-                                </a-button>
-                                <a-popconfirm title="删除之后不可修复，确认删除？" ok-text="是" cancel-text="否"
-                                    @confirm="handleDelete(record.id)">
-                                    <a-button type="danger">
-                                        删除
+                <a-row>
+                    <a-col span="8">
+                        <p>
+                            <a-form layout="inline" :model="param">
+                                <a-form-item>
+                                    <a-button type="primary" @click="showModal('add', [])">
+                                        新增
                                     </a-button>
-                                </a-popconfirm>
-                            </a-space>
-                        </template>
-                    </template>
-                </a-table>
+                                </a-form-item>
+                            </a-form>
+                        </p>
+                        <a-table :columns="columns" :row-key="record => record.id" :data-source="level1"
+                            :pagination="false" :loading="loading">
+                            <template #bodyCell="{ column, record }">
+                                <template v-if="column.dataIndex === 'action'">
+                                    <a-space size="small">
 
+                                        <a-button type="primary" @click="showModal('edit', record)">
+                                            编辑
+                                        </a-button>
+                                        <a-popconfirm title="删除之后不可修复，确认删除？" ok-text="是" cancel-text="否"
+                                            @confirm="handleDelete(record.id)">
+                                            <a-button danger>
+                                                删除
+                                            </a-button>
+                                        </a-popconfirm>
+                                    </a-space>
+                                </template>
+                            </template>
+                        </a-table>
+                    </a-col>
+
+                    <a-col span="16">
+                        <p>
+                            <a-form layout="inline">
+                                <a-form-item>
+                                    <a-button type="primary" @click="handleSave()">保存</a-button>
+                                </a-form-item>
+                            </a-form>
+                        </p>
+                        <a-form :v-model="doc" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
+                            <a-form-item>
+                                <a-input v-model:value="doc.name" placeholder="名称"></a-input>
+                            </a-form-item>
+                            <a-form-item>
+                                <a-tree-select v-model:value="doc.parent" show-search style="width: 100%;"
+                                    :dropdownStyle="{ maxHeight: '400px', overflow: 'auto' }" placeholder="请选择父文档"
+                                    allowClear treeDefaultExpandAll :treeData="treeSelectData"
+                                    treeNodeFilterProp="label"
+                                    :replaceFields="{ children: 'children', label: 'name', key: 'id', value: 'id' }">
+
+                                </a-tree-select>
+                            </a-form-item>
+                            <a-form-item>
+                                <a-select ref="select" v-model:value="doc.parent" style="width: 120px;">
+                                    <a-select-option value="0">wu1</a-select-option>
+                                    <a-select-option v-for="c in level1" :key="c.id" :value="c.id"
+                                        :disabled="doc.id === c.id">{{ c.name
+                                        }}</a-select-option>
+                                </a-select>
+                            </a-form-item>
+                            <a-form-item >
+                                <a-input v-model:value="doc.sort" placeholder="排序"></a-input>
+                            </a-form-item >
+                            <a-form-item>
+                                <div style="border:1px solid #ccc">
+                                    <Toolbar style="border-bottom: 1px solid #ccc;" :editor="editorRef"
+                                        :defaultConfig="toolbarConfig" :mode="mode" />
+                                    <Editor style="height: 500px; overflow-y: hidden;" v-model="doc.content"
+                                        :defaultConfig="editorConfig" :mode="mode" @onCreated="handleCreated" />
+                                </div>
+                            </a-form-item>
+                        </a-form>
+                    </a-col>
+
+                </a-row>
             </a-layout-content>
         </a-layout>
-        <a-modal title="样本书籍表单" v-model:visible="modalVisible" :confirm-loading="modalLoading" @ok="handleModalok">
-            <a-form :v-model="doc" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
-                <a-form-item label="名称">
-                    <a-input v-model:value="doc.name"></a-input>
-                </a-form-item>
-                <a-form-item label="父文档">
-                    <a-tree-select v-model:value="doc.parent" show-search style="width: 100%;"
-                        :dropdownStyle="{ maxHeight: '400px', overflow: 'auto' }" placeholder="请选择父文档" allowClear
-                        treeDefaultExpandAll :treeData="treeSelectData" treeNodeFilterProp="label"
-                        :replaceFields="{ children: 'children', label: 'name', key: 'id', value: 'id' }">
-
-                    </a-tree-select>
-                </a-form-item>
-                <a-form-item label="排序">
-                    <a-input v-model:value="doc.sort"></a-input>
-                </a-form-item>
-            </a-form>
-        </a-modal>
-
-
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, shallowRef } from 'vue';
 import axios from 'axios';
 import { Tool } from '@/utils/tool'
 import { message } from 'ant-design-vue';
 import { useRoute } from 'vue-router';
+import { defaultConfig } from 'ant-design-vue/es/theme/internal';
+import '@wangeditor/editor/dist/css/style.css'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
 const param = ref();
 param.value = {};
+const level1 = ref([]);
 
 const columns = [
     {
         title: '名称',
         dataIndex: 'name'
-    }, {
-        title: '父分类',
-        dataIndex: 'parent'
-    }, {
-        title: '名称',
-        dataIndex: 'sort'
     }, {
         title: 'Action',
         key: 'action',
@@ -97,7 +120,6 @@ treeSelectData.value = [];
 
 
 
-const level1 = ref()
 const loading = ref(false)
 //数据查询
 const handleQuery = () => {
@@ -111,7 +133,9 @@ const handleQuery = () => {
             console.log("数形结构，", level1)
         }
     });
-}
+};
+
+
 
 // // 获取所有电子书
 // const handleQueryEbook = () => {
@@ -125,13 +149,24 @@ const handleQuery = () => {
 //     ebooks.value = resp.data.content.list; // 更新数据源
 //   });
 // };
-
 //编辑相关功能
-const doc = ref();
+const doc = ref({
+    id: 0,
+    name: "",
+    parent: 0,
+    ebook_id: 0,
+    sort: 0
+});
 const modalVisible = ref(false);
 const modalLoading = ref(false);
-
-//声明路由
+//富文本编辑器
+const editorRef = shallowRef();
+//编辑器回调函数
+const handleCreated = (editor) => {
+    console.log('create', editor);
+    editorRef.value = editor;
+};
+// 声明路由
 const route = useRoute();
 
 //编辑方法
